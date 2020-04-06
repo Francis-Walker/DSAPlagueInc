@@ -6,9 +6,9 @@ zone = Zone()
 
 
 img_list = []
-for i in range (1000):
+for i in range (100):
 
     zone.iteration()
-    img_list.append(zone.mapImg(i))
+    img_list.append(zone.map_img())
 
-imageio.mimsave('imgChache/movie.gif', img_list)
+imageio.mimsave("imgChache/"+str(zone.prob_inf)+"%.gif", img_list)
