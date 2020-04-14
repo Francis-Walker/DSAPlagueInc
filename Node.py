@@ -3,11 +3,11 @@ import numpy as np
 
 
 class Node:
-    x = 0
-    y = 0
-    status = 'S'
+    __x = 0
+    __y = 0
+    __status = 'S'
     speed = 1
-    rad = 7
+    __rad = 7
     max_h = 0
     max_w = 0
     inf_iter = None
@@ -15,13 +15,13 @@ class Node:
 
     def __init__(self, zone):
         self.zone = zone
-        self.max_h = zone.width
-        self.max_w = zone.height
-        self.rad = zone.node_r
+        self.max_h = self.zone.height
+        self.max_w = self.zone.width
+        self.__rad = zone.node_r
         self.infected_duration = zone.node_inf_dur
 
-        self.x = random.randint(1, self.max_w - 1)
-        self.y = random.randint(1, self.max_h - 1)
+        self.__x = random.randint(1, self.max_w - 1)
+        self.__y = random.randint(1, self.max_h - 1)
 
     def step(self):
         # for each node assigns a direction and checks if direction is possible. if so moves node accordingly
@@ -30,66 +30,64 @@ class Node:
 
         # print(usage_dict[direction])
 
-        if (self.x == 1 and direction == 1):
+        if (self.__x == 1 and direction == 1):
             pass
-        elif (self.x == self.max_w - 1 and direction == 2):
+        elif (self.__x == self.max_w - 1 and direction == 2):
             pass
-        elif (self.y == 1 and direction == 3):
+        elif (self.__y == 1 and direction == 3):
             pass
-        elif (self.y == self.max_h - 1 and direction == 4):
+        elif (self.__y == self.max_h - 1 and direction == 4):
             pass
         else:
-            self.x += usage_dict[direction][0]
-            self.y += usage_dict[direction][1]
+            self.__x += usage_dict[direction][0]
+            self.__y += usage_dict[direction][1]
 
     def display_postion(self):
-        print("x " + str(self.x) + " y " + str(self.y))
+        print("x " + str(self.__x) + " y " + str(self.__y))
 
-    def get_x(self):
-        return self.x
+    @property
+    def x(self):
+        return self.__x
+    
+    @property
+    def y(self):
+        return self.__y
 
-    def get_y(self):
-        return self.y
+    @property
+    def rad(self):
+        return self.__rad
 
-    def set_x(self, new_x):
-        self.x = new_x
-
-    def set_y(self, new_y):
-        self.x = new_y
-
-    def get_rad(self):
-        return self.rad
-
-    def set_rad(self, new_rad):
-        self.rad = new_rad
+    @property
+    def status(self):
+        return self.__status
 
     def get_inf(self):
-        if self.status == 'I':
+        if self.__status == 'I':
             return True
         else:
             return False
 
     def get_rec(self):
-        if self.status == 'R' or self.status == 'D':
+        if self.__status == 'R' or self.__status == 'D':
             return True
         else:
             return False
 
     def get_dead(self):
-        if self.status == 'D':
+        if self.__status == 'D':
             return True
         else:
             return False
 
     def set_inf(self, f_t):
         if f_t:
-            self.status = 'I'
+            self.__status = 'I'
 
     def set_rec(self, f_t):
         if f_t:
-            self.status = 'R'
+            self.__status = 'R'
         else:
-            self.status = 'D'
+            self.__status = 'D'
 
     def exposed(self):
         test_int = random.randint(0, 100)
@@ -116,3 +114,5 @@ class Node:
             return True
         else:
             return False
+
+

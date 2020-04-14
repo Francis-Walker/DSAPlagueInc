@@ -10,16 +10,16 @@ from matplotlib.figure import Figure
 
 
 def is_within(node1, node2):
-    x1 = node1.get_x()
-    y1 = node1.get_y()
-    x2 = node2.get_x()
-    y2 = node2.get_y()
+    x1 = node1.x
+    y1 = node1.y
+    x2 = node2.x
+    y2 = node2.y
 
     distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
 
     print(type(distance))
-    print(type(node1.get_rad()))
-    if distance > node1.get_rad():
+    print(type(node1.rad))
+    if distance > node1.rad:
         return False
     else:
         return True
@@ -35,20 +35,61 @@ def is_within_xy(x1, y1, x2, y2, r):
 
 
 class Zone:
-    # Init codictions
-    node_r = 5
-    node_inf_dur = (14, 48)
-    current_iteration = 0
-    height = 100
-    width = 100
-    numNode = 200
-    sus_list = []
-    inf_list = []
-    rec_list = []
-    prob_inf = 30
-    prob_safely_recover = 50
+    #
+
+    @property
+    def prob_inf(self):
+        return self.__prob_inf
+
+    @property
+    def prob_safely_recover(self):
+        return self.__prob_safely_recover
+
+    @property
+    def current_iteration(self):
+        return self.__current_iteration
+
+    @current_iteration.setter
+    def current_iteration(self, new_value):
+        self.__current_iteration = new_value
+
+    @property
+    def prop_safely_recover(self):
+        return self.prob_safely_recover
+
+    @property
+    def node_inf_dur(self):
+        return self.__node_inf_dur
+
+    @property
+    def height(self):
+        return self.__height
+
+    @property
+    def width(self):
+        return self.__width
+
+    @property
+    def node_r(self):
+        return self.__node_r
 
     def __init__(self):
+
+        self.__node_r = 5
+        self.__node_inf_dur = (14, 48)
+        self.__current_iteration = 0
+        self.__height = 100
+        self.__width = 100
+        self.numNode = 200
+        self.sus_list = []
+        self.inf_list = []
+        self.rec_list = []
+        self.__prob_inf = 30
+        self.__prob_safely_recover = 50
+
+        
+
+
         for i in range(0, self.numNode):
             self.sus_list.append(Node(self))
 
@@ -60,13 +101,15 @@ class Zone:
 
         self.inf_list.append(node)
 
-    # each node makes a move
+    # each node makes a move and applies sus to inf to rec logic and swaps where needed
     def iteration(self):
 
         infection_map = {}
         swap_index = []
 
-        # check infected list and map infection zone
+        # check infected list and map infection zone and recovers node if possible
+
+        # if node can recover it does else node dies
         for i in self.inf_list:
             if i.can_recover():
                 i.recovered()
@@ -75,19 +118,20 @@ class Zone:
                 if not i.get_dead():
                     i.step()
 
+                # Helper list to swap infected and recovered node so they are in the correct list
                 swap_index.append(self.inf_list.index(i))
             else:
                 i.step()
 
-                for x in range(i.get_x() - i.get_rad(), i.get_x() + i.get_rad()):
-                    for y in range(i.get_y() - i.get_rad(), i.get_y() + i.get_rad()):
-                        if is_within_xy(i.get_x(), i.get_y(), x, y, i.get_rad()):
-                            # Check logic
+                # adds all xy within radius of infected to infection map
+                for x in range(i.x - i.rad, i.x + i.rad):
+                    for y in range(i.y - i.rad, i.y + i.rad):
+                        if is_within_xy(i.x, i.y, x, y, i.rad):
                             infection_map["" + str(x) + "," + str(y)] = True
 
         swap_index.sort()
         swap_index.reverse()
-        # Swap
+        # Swap inf to rec
         if self.inf_list:
             for index_to_remove in swap_index:
                 node = self.inf_list.pop(index_to_remove)
@@ -96,31 +140,36 @@ class Zone:
         # node in infection map exposed and populate swap indexs
         swap_index = []
 
+        # for each suseptiable node, check if in infection map
         for i in range(len(self.sus_list)):
 
             self.sus_list[i].step()
             # check logic
-            key_test = "" + str(self.sus_list[i].get_x()) + "," + str(self.sus_list[i].get_y())
+            key_test = "" + str(self.sus_list[i].x) + "," + str(self.sus_list[i].y)
 
+            # if in infection map node is exposed
             if key_test in infection_map:
                 self.sus_list[i].exposed()
+                # if node is infected prepares to swap
                 if self.sus_list[i].get_inf():
                     swap_index.append(i)
 
         # Reverses order top avoid integrity lapse
         swap_index.sort()
         swap_index.reverse()
-        # Swap
+        # Swap sus to inf
         if self.sus_list:
             for index_to_remove in swap_index:
                 node = self.sus_list.pop(index_to_remove)
                 self.inf_list.append(node)
 
             # i.display_postion()
+        # if recovered node is not dead it moves
         for i in self.rec_list:
             if not i.get_dead():
                 i.step()
-        self.current_iteration += 1
+
+        self.current_iteration = self.current_iteration + 1
 
     # gets x/y postions for all nodes
     def gen_xy_lists(self):
@@ -137,25 +186,25 @@ class Zone:
         xy = []
 
         for i in self.sus_list:
-            s_x_arr.append(i.get_x())
-            s_y_arr.append(i.get_y())
+            s_x_arr.append(i.x)
+            s_y_arr.append(i.y)
 
         for i in self.inf_list:
-            i_x_arr.append(i.get_x())
-            i_y_arr.append(i.get_y())
-            i_r_arr.append(i.get_rad())
+            i_x_arr.append(i.x)
+            i_y_arr.append(i.y)
+            i_r_arr.append(i.rad)
 
         for i in self.rec_list:
             if i.get_dead():
-                d_x_arr.append(i.get_x())
-                d_y_arr.append(i.get_y())
+                d_x_arr.append(i.x)
+                d_y_arr.append(i.y)
             else:
-                r_x_arr.append(i.get_x())
-                r_y_arr.append(i.get_y())
+                r_x_arr.append(i.x)
+                r_y_arr.append(i.y)
 
         return (np.array(s_x_arr), np.array(s_y_arr)), (np.array(i_x_arr), np.array(i_y_arr), np.array(i_r_arr)), (
             np.array(r_x_arr), np.array(r_y_arr)), (np.array(d_x_arr), np.array(d_y_arr))
-        # displays current postions of all nodes
+        # returns current postions of all nodes
 
     # makes plots
     def map(self):
@@ -169,10 +218,10 @@ class Zone:
         plt.title("Frame:" + str(self.current_iteration) + " Nodes:" + str(self.numNode) + " Inf_Nodes: " + str(
             len(self.inf_list))
                   + " Inf_prob:" + str(self.prob_inf))
-        plt.plot(co_ords[0][0], co_ords[0][1], 'bo',label="Susceptible")
-        plt.plot(co_ords[1][0], co_ords[1][1], 'ro',label="Infected")
-        plt.plot(co_ords[2][0], co_ords[2][1], 'ko',label="Recovered")
-        plt.plot(co_ords[3][0], co_ords[3][1], 'kx',label="Dead")
+        plt.plot(co_ords[0][0], co_ords[0][1], 'bo', label="Susceptible")
+        plt.plot(co_ords[1][0], co_ords[1][1], 'ro', label="Infected")
+        plt.plot(co_ords[2][0], co_ords[2][1], 'ko', label="Recovered")
+        plt.plot(co_ords[3][0], co_ords[3][1], 'kx', label="Dead")
         plt.axis("off")
         plt.legend(loc="upper right")
         ax = plt.gca()
@@ -210,3 +259,41 @@ class Zone:
                 size_r += 1
 
         return size_s, size_i, size_r, size_d
+
+    # randomly select n nodes to export.
+    def node_export(self,total_export):
+        output = []
+        #total_export = 2
+        breakpoint_sus_list = len(self.sus_list)
+        breakpoint_inf_list = breakpoint_sus_list + len(self.inf_list)
+        breakpoint_rec_list = breakpoint_inf_list + len(self.rec_list)
+
+        for i in range(total_export):
+            random_index = random.randint(0, self.numNode)
+            if random_index < breakpoint_sus_list and random_index < breakpoint_inf_list:
+                node = random.choice(self.sus_list)
+                self.sus_list.remove(node)
+                output.append(node)
+
+            elif random_index < breakpoint_inf_list and random_index < breakpoint_rec_list:
+                node = random.choice(self.inf_list)
+                self.inf_list.remove(node)
+                output.append(node)
+            else:
+                node = random.choice(self.rec_list)
+                self.rec_list.remove(node)
+                output.append(node)
+
+        return output
+
+    # import n  nodes and assign them to respective list
+    def node_import(self, import_list):
+        for i in import_list:
+            if i.status =='S':
+                self.sus_list.append(i)
+            elif i.status =='I':
+                self.inf_list.append(i)
+            else:
+                self.rec_list.append(i)
+
+
