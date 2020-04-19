@@ -73,22 +73,20 @@ class Zone:
     def node_r(self):
         return self.__node_r
 
-    def __init__(self):
+    def __init__(self, num_nodes=100, node_radius=5, infected_duration=(14, 48),
+                 size_y=100, size_x=100, infection_prob=35, recover_safely_prob=50):
 
-        self.__node_r = 5
-        self.__node_inf_dur = (14, 48)
+        self.__node_r = node_radius
+        self.__node_inf_dur = infected_duration
         self.__current_iteration = 0
-        self.__height = 100
-        self.__width = 100
-        self.numNode = 200
+        self.__height = size_y
+        self.__width = size_x
+        self.numNode = num_nodes
         self.sus_list = []
         self.inf_list = []
         self.rec_list = []
-        self.__prob_inf = 30
-        self.__prob_safely_recover = 50
-
-        
-
+        self.__prob_inf = infection_prob
+        self.__prob_safely_recover = recover_safely_prob
 
         for i in range(0, self.numNode):
             self.sus_list.append(Node(self))
@@ -96,7 +94,7 @@ class Zone:
         ran_index = random.randint(0, len(self.sus_list) + 1)
         node = self.sus_list.pop(ran_index)
         # print(node.status)
-        node.infected()
+        node.exposed(True)
         # print(node.status)
 
         self.inf_list.append(node)
@@ -258,12 +256,12 @@ class Zone:
             else:
                 size_r += 1
 
-        return size_s, size_i, size_r, size_d
+        return [size_s, size_i, size_r, size_d, self.current_iteration]
 
     # randomly select n nodes to export.
-    def node_export(self,total_export):
+    def node_export(self, total_export):
         output = []
-        #total_export = 2
+        # total_export = 2
         breakpoint_sus_list = len(self.sus_list)
         breakpoint_inf_list = breakpoint_sus_list + len(self.inf_list)
         breakpoint_rec_list = breakpoint_inf_list + len(self.rec_list)
@@ -283,17 +281,18 @@ class Zone:
                 node = random.choice(self.rec_list)
                 self.rec_list.remove(node)
                 output.append(node)
-
+            self.numNode -= 1
         return output
 
     # import n  nodes and assign them to respective list
-    def node_import(self, import_list):
-        for i in import_list:
-            if i.status =='S':
-                self.sus_list.append(i)
-            elif i.status =='I':
-                self.inf_list.append(i)
-            else:
-                self.rec_list.append(i)
+    def node_import(self, node):
 
+        node.zone_update(self)
+        if node.get_rec():
+            self.rec_list.append(node)
+        elif node.get_inf():
+            self.inf_list.append(node)
+        else:
+            self.sus_list.append(node)
+        self.numNode += 1
 
